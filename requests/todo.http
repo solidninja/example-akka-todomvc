@@ -1,0 +1,25 @@
+# Create a TODO
+POST http://127.0.0.1:9090/todo
+Content-Type: application/json
+
+{
+  "title": "Do laundry",
+  "completed": false
+}
+
+###
+
+# List TODOs
+GET http://127.0.0.1:9090/todo/list
+
+###
+
+# Get specific TODO
+GET http://127.0.0.1:9090/todo/adefba6d-3014-4ff2-a395-c31408470472
+
+###
+
+# Complete specific TODO
+POST http://127.0.0.1:9090/todo/complete/adefba6d-3014-4ff2-a395-c31408470472
+
+###
