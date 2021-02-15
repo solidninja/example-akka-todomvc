@@ -3,11 +3,11 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val akka = "2.6.0-RC1"
+    val akka = "2.6.12"
     val `akka-persistence-inmemory` = "2.5.15.2"
-    val circe = "0.12.2"
-    val scalatest = "3.0.8"
-    val tapir = "0.11.9"
+    val circe = "0.13.0"
+    val scalatest = "3.2.3"
+    val tapir = "0.17.10"
   }
 
   val akka = Seq(
@@ -32,17 +32,17 @@ object Dependencies {
   )
 
   val tapir = Seq(
-    "com.softwaremill.tapir" %% "tapir-core" % Versions.tapir,
-    "com.softwaremill.tapir" %% "tapir-akka-http-server" % Versions.tapir,
-    "com.softwaremill.tapir" %% "tapir-json-circe" % Versions.tapir,
-    "com.softwaremill.tapir" %% "tapir-openapi-docs" % Versions.tapir,
-    "com.softwaremill.tapir" %% "tapir-openapi-circe" % Versions.tapir,
-    "com.softwaremill.tapir" %% "tapir-openapi-circe-yaml" % Versions.tapir,
-    "com.softwaremill.tapir" %% "tapir-swagger-ui-akka-http" % Versions.tapir
+    "com.softwaremill.sttp.tapir" %% "tapir-core" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-akka-http-server" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-openapi-circe-yaml" % Versions.tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-akka-http" % Versions.tapir
   )
 
   val runtimeLogging = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "ch.qos.logback" % "logback-classic" % "1.2.3" % "runtime"
+    "ch.qos.logback" % "logback-classic" % "1.2.3" // todo removed, intellij bug? % "runtime"
   )
 }

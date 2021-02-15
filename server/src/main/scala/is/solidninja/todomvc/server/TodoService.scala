@@ -3,21 +3,9 @@ package solidninja
 package todomvc
 package server
 
-import java.util.UUID
-
-import scala.concurrent.ExecutionContext
-
 import akka.actor.typed.{ActorRef, Scheduler}
 import akka.util.Timeout
-import is.solidninja.todomvc.protocol.{
-  JsonProtocol,
-  NewTodo,
-  Todo,
-  TodoCommand,
-  TodoEvent,
-  TodoQuery,
-  TodoQueryResponse
-}
+import is.solidninja.todomvc.protocol._
 import is.solidninja.todomvc.server.TodoActorProtocol.{
   CommandReplyMessage,
   EventReply,
@@ -25,25 +13,30 @@ import is.solidninja.todomvc.server.TodoActorProtocol.{
   QueryReplyMessage,
   Reply
 }
-import tapir._
-import tapir.json.circe._
-import tapir.server.akkahttp._
-import tapir.docs.openapi._
-import tapir.openapi.OpenAPI
-import tapir.openapi.circe.yaml._
-import tapir.swagger.akkahttp.SwaggerAkka
+import sttp.tapir._
+import sttp.tapir.docs.openapi._
+import sttp.tapir.json.circe._
+import sttp.tapir.openapi.OpenAPI
+import sttp.tapir.openapi.circe.yaml._
+import sttp.tapir.server.akkahttp.AkkaHttpServerInterpreter
+import sttp.tapir.swagger.akkahttp.SwaggerAkka
+
+import java.util.UUID
+import scala.concurrent.ExecutionContext
 
 object TodoServiceEndpoints extends JsonProtocol {
-  private val base: Endpoint[Unit, String, Unit, Nothing] =
+  import sttp.tapir.generic.auto._
+
+  private val base: Endpoint[Unit, String, Unit, Any] =
     endpoint.in("todo").errorOut(plainBody[String])
 
-  val listTodos = base
+  val listTodos: Endpoint[Unit, String, Vector[Todo], Any] = base
     .in("list")
     .get
     .out(jsonBody[Vector[Todo]])
     .description("list all todos")
 
-  val addTodo = base
+  val addTodo: Endpoint[NewTodo, String, Todo, Any] = base
     .in(
       jsonBody[NewTodo]
         .description("The todo to add to the list")
@@ -53,13 +46,13 @@ object TodoServiceEndpoints extends JsonProtocol {
     .out(jsonBody[Todo])
     .description("Add a new todo")
 
-  val getTodo = base
+  val getTodo: Endpoint[UUID, String, Option[Todo], Any] = base
     .in(path[UUID].name("uuid"))
     .get
     .out(jsonBody[Option[Todo]])
     .description("Get a todo by its uuid")
 
-  val completeTodo = base
+  val completeTodo: Endpoint[UUID, String, Option[Todo], Any] = base
     .in("complete" / path[UUID].name("uuid"))
     .put
     .out(jsonBody[Option[Todo]])
@@ -69,8 +62,9 @@ object TodoServiceEndpoints extends JsonProtocol {
 }
 
 object TodoService {
+  import AkkaHttpServerInterpreter.toRoute
   import akka.actor.typed.scaladsl.AskPattern._
-  import akka.http.scaladsl.server.Directives._
+  import akka.http.scaladsl.server.Directives.concat
   import akka.http.scaladsl.server.Route
 
   def routes(
@@ -78,49 +72,41 @@ object TodoService {
   )(implicit ec: ExecutionContext, timeout: Timeout, scheduler: Scheduler): Route = {
 
     val list =
-      TodoServiceEndpoints.listTodos
-        .toRoute(
-          _ =>
-            (store ? (replyTo => QueryReplyMessage(replyTo, TodoQuery.GetTodos))).map(mapQueryReply {
-              case TodoQueryResponse.FoundAll(todos) => Right(todos.toVector)
-              case _                                 => unexpectedQueryReply
-            })
-        )
-
-    val add = TodoServiceEndpoints.addTodo
-      .toRoute(
-        todo =>
-          (store ? (replyTo => CommandReplyMessage(replyTo, TodoCommand.AddTodo(todo)))).map(mapEventReply {
-            case TodoEvent.TodoUpdated(todo) => Right(todo)
-            case _                           => unexpectedEventReply
-          })
+      toRoute(TodoServiceEndpoints.listTodos)(_ =>
+        (store ? (replyTo => QueryReplyMessage(replyTo, TodoQuery.GetTodos))).map(mapQueryReply {
+          case TodoQueryResponse.FoundAll(todos) => Right(todos.toVector)
+          case _                                 => unexpectedQueryReply
+        })
       )
 
-    val get = TodoServiceEndpoints.getTodo
-      .toRoute(
-        id =>
-          (store ? (replyTo => QueryReplyMessage(replyTo, TodoQuery.GetTodo(id))))
-            .map(mapQueryReply {
-              case TodoQueryResponse.Found(todo) => Right(Some(todo))
-              case TodoQueryResponse.NotFound    => Right(None)
-              case _                             => unexpectedQueryReply
-            })
-      )
+    val add = toRoute(TodoServiceEndpoints.addTodo)(todo =>
+      (store ? (replyTo => CommandReplyMessage(replyTo, TodoCommand.AddTodo(todo)))).map(mapEventReply {
+        case TodoEvent.TodoUpdated(todo) => Right(todo)
+        case _                           => unexpectedEventReply
+      })
+    )
 
-    val complete = TodoServiceEndpoints.completeTodo
-      .toRoute(
-        id =>
-          (store ? (replyTo => CommandReplyMessage(replyTo, TodoCommand.CompleteTodo(id))))
-            .map {
-              case EventReply(TodoEvent.TodoUpdated(todo)) => Right(Some(todo))
-              case QueryReply(TodoQueryResponse.NotFound)  => Right(None)
-              case EventReply(_)                           => unexpectedEventReply
-              case QueryReply(_)                           => unexpectedQueryReply
-            }
-      )
+    val get = toRoute(TodoServiceEndpoints.getTodo)(id =>
+      (store ? (replyTo => QueryReplyMessage(replyTo, TodoQuery.GetTodo(id))))
+        .map(mapQueryReply {
+          case TodoQueryResponse.Found(todo) => Right(Some(todo))
+          case TodoQueryResponse.NotFound    => Right(None)
+          case _                             => unexpectedQueryReply
+        })
+    )
+
+    val complete = toRoute(TodoServiceEndpoints.completeTodo)(id =>
+      (store ? (replyTo => CommandReplyMessage(replyTo, TodoCommand.CompleteTodo(id))))
+        .map {
+          case EventReply(TodoEvent.TodoUpdated(todo)) => Right(Some(todo))
+          case QueryReply(TodoQueryResponse.NotFound)  => Right(None)
+          case EventReply(_)                           => unexpectedEventReply
+          case QueryReply(_)                           => unexpectedQueryReply
+        }
+    )
 
     // docgen
-    val openApiDocs: OpenAPI = TodoServiceEndpoints.All.toOpenAPI("TodoMVC service", "0.1.0")
+    val openApiDocs: OpenAPI = OpenAPIDocsInterpreter.toOpenAPI(TodoServiceEndpoints.All, "TodoMVC service", "0.1.0")
     val openApiYml: String = openApiDocs.toYaml
 
     concat(list, add, get, complete, new SwaggerAkka(openApiYml).routes)

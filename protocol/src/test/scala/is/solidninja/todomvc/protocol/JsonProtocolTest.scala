@@ -4,15 +4,15 @@ package todomvc
 package protocol
 
 import java.util.UUID
-
 import io.circe.literal._
 import io.circe.syntax._
 import is.solidninja.todomvc.protocol.TodoCommand.{AddTodo, CompleteTodo, UpdateTodo}
 import is.solidninja.todomvc.protocol.TodoEvent.TodoUpdated
 import is.solidninja.todomvc.protocol.TodoQuery.{GetTodo, GetTodos}
-import org.scalatest.{FreeSpec, Matchers}
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.should.Matchers
 
-class JsonProtocolTest extends FreeSpec with Matchers {
+class JsonProtocolTest extends AnyFreeSpec with Matchers {
   import JsonProtocol._
 
   "Todo should be serialized to JSON and back again" in {

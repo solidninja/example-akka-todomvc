@@ -22,7 +22,7 @@ object build {
   val commonSettings = Seq(
     organization := "is.solidninja.todomvc",
     version := "0.0.1-SNAPSHOT",
-    scalaVersion := "2.13.1",
+    scalaVersion := "2.13.4",
     javacOptions ++= Seq("-target", "1.8", "-source", "1.8"),
     manifestSetting,
     crossVersion := CrossVersion.binary,

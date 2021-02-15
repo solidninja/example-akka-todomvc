@@ -18,8 +18,7 @@ object TodoStore {
   type Event = TodoEvent
   type Response = TodoActorProtocol.Reply
 
-  /**
-    * Create a new store of Todos, that follows the TodoActorProtocol
+  /** Create a new store of Todos, that follows the TodoActorProtocol
     */
   def apply(): EventSourcedBehavior[Command, Event, State] =
     EventSourcedBehavior.withEnforcedReplies(

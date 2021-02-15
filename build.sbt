@@ -18,12 +18,11 @@ lazy val server = Project(
   id = "todomvc-server",
   base = file("server")
 ).settings(
-    commonSettings,
-    Seq(
-      libraryDependencies ++= akka ++ `akka-testkit` ++ circe ++ scalatest ++ tapir ++ runtimeLogging,
-      scalafmtOnCompile := true,
-      Test / fork := true
-    )
+  commonSettings,
+  Seq(
+    libraryDependencies ++= akka ++ `akka-testkit` ++ circe ++ scalatest ++ tapir ++ runtimeLogging,
+    scalafmtOnCompile := true,
+    Test / fork := true
   )
-  .dependsOn(protocol)
+).dependsOn(protocol)
   .aggregate(protocol)
