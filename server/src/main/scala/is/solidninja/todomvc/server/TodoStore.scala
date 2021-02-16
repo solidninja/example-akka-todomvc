@@ -22,10 +22,10 @@ object TodoStore {
     */
   def apply(): EventSourcedBehavior[Command, Event, State] =
     EventSourcedBehavior.withEnforcedReplies(
-      persistenceId = PersistenceId("todo", "store"),
+      persistenceId = PersistenceId.ofUniqueId("todo-store"),
       emptyState = Map.empty[UUID, Todo],
-      commandHandler = (commandHandler _),
-      eventHandler = (eventHandler _)
+      eventHandler = eventHandler,
+      commandHandler = commandHandler
     )
 
   private def commandHandler(

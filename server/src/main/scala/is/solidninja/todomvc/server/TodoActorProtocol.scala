@@ -4,7 +4,6 @@ package todomvc
 package server
 
 import java.io.NotSerializableException
-
 import akka.actor.ExtendedActorSystem
 import akka.actor.typed.{ActorRef, ActorRefResolver, ActorSystem}
 import akka.serialization.SerializerWithStringManifest
@@ -14,6 +13,8 @@ import io.circe.syntax._
 import io.circe.{Codec, Decoder, Encoder}
 import is.solidninja.todomvc.protocol._
 import is.solidninja.todomvc.server.TodoActorProtocol.{MessageWithReplyTarget, Reply}
+
+import scala.annotation.unused
 
 object TodoActorProtocol extends JsonProtocol {
   sealed trait Reply
@@ -39,10 +40,8 @@ trait AkkaProtocol {
 
 trait TodoActorJsonProtocol extends JsonProtocol with AkkaProtocol {
   implicit val replyCodec: Codec[Reply] = deriveCodec
-  implicit def messageWithReplyTargetCodec(implicit as: ActorSystem[_]): Codec[MessageWithReplyTarget] = {
-    val _ = as // get rid of unused warning
+  implicit def messageWithReplyTargetCodec(implicit @unused as: ActorSystem[_]): Codec[MessageWithReplyTarget] =
     deriveCodec
-  }
 }
 
 class TodoActorProtocolSerializer(as: ExtendedActorSystem)

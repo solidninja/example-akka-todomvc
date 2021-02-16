@@ -42,3 +42,13 @@ object TodoQueryResponse {
   final case class Found(todo: Todo) extends TodoQueryResponse
   final case class FoundAll(todos: List[Todo]) extends TodoQueryResponse
 }
+
+sealed trait Change[T] {
+  def value: T
+}
+
+object Change {
+  final case class Add[T](value: T) extends Change[T]
+  final case class Remove[T](value: T) extends Change[T]
+  final case class Update[T](value: T) extends Change[T]
+}

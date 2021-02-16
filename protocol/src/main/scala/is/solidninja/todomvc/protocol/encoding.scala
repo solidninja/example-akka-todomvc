@@ -10,6 +10,8 @@ trait JsonProtocol {
   implicit val todoCodec: Codec[Todo] = deriveCodec
   implicit val newTodoCodec: Codec[NewTodo] = deriveCodec
 
+  implicit def changeCodec[T: Codec]: Codec[Change[T]] = deriveCodec
+
   implicit val todoCommandCodec: Codec[TodoCommand] = deriveCodec
   implicit val todoEventCodec: Codec[TodoEvent] = deriveCodec
   implicit val todoQueryCodec: Codec[TodoQuery] = deriveCodec
